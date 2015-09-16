@@ -8,7 +8,7 @@ class MissingComponentsError(Exception):
         self.mtype = mtype
 
     def __str__(self):
-        return repr("Message type " + self.mtype + "missing components: " + (self.req - self.pro))
+        return repr("Message type " + self.mtype + " missing components: " + str(self.req - self.pro))
 
 
 class UnknownTypeError(Exception):

@@ -26,27 +26,27 @@ class GGMPClient:
 
     def build_message(self, type, ack=False, **kwargs):
         if type == Message.Action:
-            if ["ar", "an"] not in kwargs:
+            if {"ar", "an"} - set(kwargs):
                 raise errors.MissingComponentsError("Action", ["ar", "an"], kwargs)
             else:
-                ac1 = kwargs["ac1"] if kwargs["ac1"] else 0x00
-                ac2 = kwargs["ac2"] if kwargs["ac2"] else 0x00
+                ac1 = kwargs["ac1"] if "ac1" in kwargs else 0x00
+                ac2 = kwargs["ac2"] if "ac2" in kwargs else 0x00
                 m = messages.Action(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
-        if type == Message.ActionShort:
-            if ["ar", "an"] not in kwargs:
+        elif type == Message.ActionShort:
+            if {"ar", "an"} - set(kwargs):
                 raise errors.MissingComponentsError("ActionShort", ["ar", "an"], kwargs)
             else:
-                ac1 = kwargs["ac1"] if kwargs["ac1"] else 0x00
-                ac2 = kwargs["ac2"] if kwargs["ac2"] else 0x00
+                ac1 = kwargs["ac1"] if "ac1" in kwargs else 0x00
+                ac2 = kwargs["ac2"] if "ac2" in kwargs else 0x00
                 m = messages.ActionShort(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
-        if type == Message.ActionExtended:
-            if ["ar", "an"] not in kwargs:
+        elif type == Message.ActionExtended:
+            if {"ar", "an"} - set(kwargs):
                 raise errors.MissingComponentsError("ActionExtended", ["ar", "an"], kwargs)
             else:
-                ac1 = kwargs["ac1"] if kwargs["ac1"] else 0x00
-                ac2 = kwargs["ac2"] if kwargs["ac2"] else 0x00
+                ac1 = kwargs["ac1"] if "ac1" in kwargs else 0x00
+                ac2 = kwargs["ac2"] if "ac2" in kwargs else 0x00
                 m = messages.ActionExtended(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
         else:
