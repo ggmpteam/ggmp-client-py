@@ -1,64 +1,67 @@
 __author__ = 'bretmattingly'
-from .utils import append_hex
+from . import messages
+from . import errors
 import socket
+from enum import Enum
+from queue import Queue
+
 
 class GGMPClient:
     def __init__(self, c_id, ip_addr, use_message_ids=True):
         self.client_id = c_id
         self.use_message_ids = use_message_ids
-        self.message_id = 0x00000000
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s.bind(ip_addr)
+        self.message_id = 0x000000
+        self.sout = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sout.bind(ip_addr)
+        self.sin = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sin.bind((ip_addr[0], ip_addr[1] - 1))
+        self.inq = Queue()
+        self.outq = Queue()
+
         # Todo: Create a thread receiving on the designated socket and listen on it
         # Todo: Sanity checks
 
-    def send(self, actor_id, action_id, condition1=0x0000, condition2=0x0000):
-        message = 0xFF  # Initial message to contain header
-        message = append_hex(message, bin(self.client_id))
-        message = append_hex(message, bin(self.message_id))
-        self.message_id += 1
-        message = append_hex(message, bin(actor_id))
-        message = append_hex(message, bin(action_id))
-        message = append_hex(message, bin(condition1))
-        message = append_hex(message, bin(condition2))
-        print(hex(message))
-        self.s.sendto(str(message).encode(), ("127.0.0.1", 8081))
+    def send(self):
+        pass
 
-    def build_message(self, actor_id, action_id, condition1, condition2):
-        # 0xFF  00  00000000    00  00  00  00
-        # HEAD  CL  MESS_ID     AC  AR  C1  C2
+    def build_message(self, type, ack=False, **kwargs):
+        if type == Message.Action:
+            if ["ar", "an"] not in kwargs:
+                raise errors.MissingComponentsError("Action", ["ar", "an"], kwargs)
+            else:
+                ac1 = kwargs["ac1"] if kwargs["ac1"] else 0x00
+                ac2 = kwargs["ac2"] if kwargs["ac2"] else 0x00
+                m = messages.Action(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
-        # header
-        message = 0xFF
+        if type == Message.ActionShort:
+            if ["ar", "an"] not in kwargs:
+                raise errors.MissingComponentsError("ActionShort", ["ar", "an"], kwargs)
+            else:
+                ac1 = kwargs["ac1"] if kwargs["ac1"] else 0x00
+                ac2 = kwargs["ac2"] if kwargs["ac2"] else 0x00
+                m = messages.ActionShort(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
-        # client id
-        message <<= 8
-        message += (self.client_id & 0xFF)
+        if type == Message.ActionExtended:
+            if ["ar", "an"] not in kwargs:
+                raise errors.MissingComponentsError("ActionExtended", ["ar", "an"], kwargs)
+            else:
+                ac1 = kwargs["ac1"] if kwargs["ac1"] else 0x00
+                ac2 = kwargs["ac2"] if kwargs["ac2"] else 0x00
+                m = messages.ActionExtended(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
-        # message id
-        message <<= 8 * 4
-        message += (self.message_id & 0xFFFFFFFF)
-        self.message_id += 1
+        else:
+            raise errors.UnknownTypeError(type)
 
-        # actor id
-        message <<= 8
-        message += (actor_id & 0xFF)
-
-        # action id
-        message <<= 8
-        message += (action_id & 0xFF)
-
-        # Condition 1
-        message <<= 8
-        message += (condition1 & 0xFF)
-
-        # Condition 2
-        message <<= 8
-        message += (condition2 & 0xFF)
-
-        return message
+        self.outq.put(m, block=False)
 
 
+class Message(Enum):
+    Action          = 1
+    ActionShort     = 2
+    ActionExtended  = 3
+    Data            = 4
+    DataEnd         = 5
+    Ack             = 6
 
 
 
