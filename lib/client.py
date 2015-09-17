@@ -3,7 +3,8 @@ from . import messages
 from . import errors
 import socket
 from enum import Enum
-from queue import Queue
+from queue import Queue, Empty
+from threading import local, Thread
 
 
 class GGMPClient:
@@ -17,6 +18,13 @@ class GGMPClient:
         self.sin.bind((ip_addr[0], ip_addr[1] - 1))
         self.inq = Queue()
         self.outq = Queue()
+        self.server_addr = ip_addr
+
+        self.outbox = Thread(target=_sendmsg, args=(self.outq, self.sout, self.server_addr))
+        self.inbox = Thread(target=_listen, args=(self.inq, self.sin))
+
+        self.outbox.start()
+        self.inbox.start()
 
         # Todo: Create a thread receiving on the designated socket and listen on it
         # Todo: Sanity checks
@@ -24,8 +32,16 @@ class GGMPClient:
     def send(self):
         pass
 
-    def build_message(self, type, ack=False, **kwargs):
-        if type == Message.Action:
+    def try_read(self):
+        m = self.inq.get(block=False)
+        print("Received message: " + str(m))
+
+    def read(self):
+        m = self.inq.get(block=True)
+        print("Received message: " + str(m))
+
+    def build_message(self, mtype, ack=False, **kwargs):
+        if mtype == Message.Action:
             if {"ar", "an"} - set(kwargs):
                 raise errors.MissingComponentsError("Action", ["ar", "an"], kwargs)
             else:
@@ -33,7 +49,7 @@ class GGMPClient:
                 ac2 = kwargs["ac2"] if "ac2" in kwargs else 0x00
                 m = messages.Action(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
-        elif type == Message.ActionShort:
+        elif mtype == Message.ActionShort:
             if {"ar", "an"} - set(kwargs):
                 raise errors.MissingComponentsError("ActionShort", ["ar", "an"], kwargs)
             else:
@@ -41,7 +57,7 @@ class GGMPClient:
                 ac2 = kwargs["ac2"] if "ac2" in kwargs else 0x00
                 m = messages.ActionShort(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
 
-        elif type == Message.ActionExtended:
+        elif mtype == Message.ActionExtended:
             if {"ar", "an"} - set(kwargs):
                 raise errors.MissingComponentsError("ActionExtended", ["ar", "an"], kwargs)
             else:
@@ -62,6 +78,23 @@ class Message(Enum):
     Data            = 4
     DataEnd         = 5
     Ack             = 6
+
+
+def _listen(inq, sin):
+    while True:
+        localdata = local()
+        localdata.m = sin.recvfrom(512)
+        print("Received " + str(localdata.m[0]) + " from " + str(localdata.m[1]))
+        inq.put(localdata.m[0], block=False)
+
+
+def _sendmsg(outq, sout, ip_addr):
+    while True:
+        localdata = local()
+        localdata.m = outq.get(block=True)
+        sout.sendto(localdata.m.stream.to_bytes(21, "big"), (ip_addr[0], ip_addr[1]-1))
+
+
 
 
 
