@@ -17,3 +17,11 @@ class UnknownTypeError(Exception):
 
     def __str__(self):
         return repr("Unknown message type: " + self.mtype)
+
+
+class NoMessagesError(Exception):
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return repr("No messages available in input queue.")
