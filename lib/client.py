@@ -34,8 +34,8 @@ class GGMPClient:
         self.outq = Queue()  # Output queue
         self.server_addr = ip_addr
 
-        self.outbox = Thread(target=_sendmsg, args=(self.outq, self.sout, self.server_addr))
-        self.inbox = Thread(target=_listen, args=(self.inq, self.sin))
+        self.outbox = Thread(target=_sendmsg, daemon=True, args=(self.outq, self.sout, self.server_addr))
+        self.inbox = Thread(target=_listen, daemon=True, args=(self.inq, self.sin))
 
         self.outbox.start()
         self.inbox.start()
@@ -106,6 +106,7 @@ class GGMPClient:
         else:
             raise errors.UnknownTypeError(type)
 
+        self.message_id += 1
         self.outq.put(m, block=False)
 
 
@@ -130,7 +131,7 @@ def _sendmsg(outq, sout, ip_addr):
     while True:
         localdata = local()
         localdata.m = outq.get(block=True)
-        sout.sendto(localdata.m.stream.to_bytes(21, "big"), (ip_addr[0], ip_addr[1]-1))
+        sout.sendto(localdata.m.stream, (ip_addr[0], ip_addr[1]-1))
 
 
 

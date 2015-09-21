@@ -15,9 +15,12 @@ try:
 except MissingComponentsError as e:
     print(e)
 
+ggwp.build_message(Message.Action, True, ar=2, an=14, ac1=244)
+
 while True:
     try:
         ggwp.try_read()
-    except Empty as e:
-        pass
+    except NoMessagesError as e:
+        print("All out of messages.")
+        exit(0)
 
