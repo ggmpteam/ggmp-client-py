@@ -9,6 +9,7 @@ setup(
     name='ggmp-client',
     version='0.2.0',
     url='https://github.com/bomattin/ggmp-client',
+    download_url='https://github.com/ggmpteam/ggmp-client-py/tarball/0.2.0',
     license='BSD',
     author='Bret Mattingly 2',
     author_email='bret.mattingly@gmail.com',
