@@ -1,6 +1,7 @@
 __author__ = 'bretmattingly'
 from . import messages
 from . import errors
+from .decoding import decode as message_decode
 import socket
 from enum import Enum
 from queue import Queue, Empty
@@ -125,6 +126,7 @@ def _listen(inq, sin):
         localdata.m = sin.recvfrom(512)
         print("Received " + str(localdata.m[0]) + " from " + str(localdata.m[1]))
         inq.put(localdata.m[0], block=False)
+        print(message_decode(localdata.m[0]))
 
 
 def _sendmsg(outq, sout, ip_addr):

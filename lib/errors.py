@@ -25,3 +25,13 @@ class NoMessagesError(Exception):
 
     def __str__(self):
         return repr("No messages available in input queue.")
+
+
+class MalformedMessageError(Exception):
+    def __init__(self, stream, expected_length):
+        self.m = stream
+        self.el = expected_length
+        pass
+
+    def __str__(self):
+        return repr("Message was malformed. \nBytes:" + str(self.m) + "\nExpected length: " + self.el)

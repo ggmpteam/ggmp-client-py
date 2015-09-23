@@ -22,5 +22,5 @@ while True:
         ggwp.try_read()
     except NoMessagesError as e:
         print("All out of messages.")
-        exit(0)
+        #  exit(0)
 
