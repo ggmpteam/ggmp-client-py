@@ -27,16 +27,14 @@ class GGMPClient:
         self.client_id = c_id
         self.use_message_ids = use_message_ids
         self.message_id = 0x000000
-        self.sout = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Output socket
-        self.sout.bind(ip_addr)
-        self.sin = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Input socket
-        self.sin.bind((ip_addr[0], ip_addr[1] - 1))
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Output socket
+        self.sock.bind(ip_addr)
         self.inq = Queue()  # Input queue
         self.outq = Queue()  # Output queue
         self.server_addr = ip_addr
 
-        self.outbox = Thread(target=_sendmsg, daemon=True, args=(self.outq, self.sout, self.server_addr))
-        self.inbox = Thread(target=_listen, daemon=True, args=(self.inq, self.sin))
+        self.outbox = Thread(target=_sendmsg, daemon=True, args=(self.outq, self.sock, self.server_addr))
+        self.inbox = Thread(target=_listen, daemon=True, args=(self.inq, self.sock))
 
         self.outbox.start()
         self.inbox.start()
@@ -129,11 +127,11 @@ def _listen(inq, sin):
         print(message_decode(localdata.m[0]))
 
 
-def _sendmsg(outq, sout, ip_addr):
+def _sendmsg(outq, sock, ip_addr):
     while True:
         localdata = local()
         localdata.m = outq.get(block=True)
-        sout.sendto(localdata.m.stream, (ip_addr[0], ip_addr[1]-1))
+        sock.sendto(localdata.m.stream, (ip_addr[0], ip_addr[1]))
 
 
 

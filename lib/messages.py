@@ -35,11 +35,24 @@ class ActionExtended:
 
 
 class Data:
-    pass
+    def __init__(self, ACK, cl, mid, pmsg, siz, dat):
+        self.stream = bytearray([0x0E]) if ACK else bytearray([0x0F])
+        self.stream.extend((cl & 0xFFFFFF).to_bytes(3, "big", signed=False))
+        self.stream.extend((mid & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
+        self.stream.extend((pmsg & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
+        self.stream.extend((siz & 0xFFFFFFFF).to_bytes(1, "big", signed=False))
+        self.stream.extend(dat)
 
 
 class DataEnd:
-    pass
+    def __init__(self, ACK, cl, mid, pmsg, siz, dat):
+        self.stream = bytearray([0x0E]) if ACK else bytearray([0x0F])
+        self.stream.extend((cl & 0xFFFFFF).to_bytes(3, "big", signed=False))
+        self.stream.extend((mid & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
+        self.stream.extend((pmsg & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
+        self.stream.extend((siz & 0xFFFFFFFF).to_bytes(1, "big", signed=False))
+        self.stream.extend(dat)
+
 
 
 class Ack:
