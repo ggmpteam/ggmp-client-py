@@ -33,11 +33,11 @@ class GGMPClient:
         self.outq = Queue()  # Output queue
         self.server_addr = ip_addr
 
-        self.outbox = Thread(target=_sendmsg, daemon=True, args=(self.outq, self.sock, self.server_addr))
-        self.inbox = Thread(target=_listen, daemon=True, args=(self.inq, self.sock))
+        self.outthread = Thread(target=_sendmsg, daemon=True, args=(self.outq, self.sock, self.server_addr))
+        self.inthread = Thread(target=_listen, daemon=True, args=(self.inq, self.sock))
 
-        self.outbox.start()
-        self.inbox.start()
+        self.outthread.start()
+        self.inthread.start()
 
         # Todo: Sanity checks
 
