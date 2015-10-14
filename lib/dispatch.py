@@ -36,15 +36,15 @@ class Dispatch:
         self.outbox.put(msg)
 
     def send_all(self):
-        lost = self.awaitbox.tick()
-        for m in lost:
-            self.lostbox.put(m)
 
         self.tick_count += 1
         awaiting_ms = self.awaitbox.pull_resend(self.tick_count)
-        self.awaitbox.tick()
         for m in awaiting_ms:
             self.threader.add_message(m)
+
+        lost = self.awaitbox.shift()
+        for m in lost:
+            self.lostbox.put(m)
 
         while not self.outbox.empty():
             try:
@@ -80,6 +80,7 @@ class _Threader:
     """
     def __init__(self, c_id, ip_addr):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Input/Output socket
+
         self.sock.bind(("0.0.0.0", 12358))
         self.inq = Queue()  # Input queue, stores Message objects
         self.outq = Queue()  # Output queue, stores Message objects
@@ -123,29 +124,24 @@ def sendmsg(outq, sock, ip_addr):
 
 class _Awaitbox:
     def __init__(self):
-        self.first = dict()
-        self.second = dict()
-        self.third = dict()
-        self.buckets = [dict, dict, dict]
+        self.buckets = [dict(), dict(), dict()]
         self.intervals = [1, 3, 5]
 
-    def tick(self):
+    def shift(self):
         """
         "Ticks" the awaitbox, moving all items in first to second, second to third, etc.
         :return: All items which "ticked out" of third (since they should be moved to the lostbox
         """
-        ret = self.buckets[2].values()
+        ret = self.buckets[2].copy().values()
         self.buckets[2].clear()
         self.buckets[2] = self.buckets[1].copy()
         self.buckets[1].clear()
         self.buckets[1] = self.buckets[0].copy()
         self.buckets[0].clear()
-
-
-        return ret
+        return list(ret)
 
     def add(self, msg):
-        self.first[msg.mid] = msg
+        self.buckets[0][msg.mid] = msg
 
     def acknowledge(self, mid):
         for bucket in self.buckets:
