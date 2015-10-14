@@ -1,6 +1,7 @@
 __author__ = 'bretmattingly'
 from .messages import *
 from .errors import *
+
 HEAD_CODES = {
     0x00: (Action, True),
     0x01: (Action, False),
@@ -12,6 +13,7 @@ HEAD_CODES = {
     0x0F: (Data, False),
     0x12: (DataEnd, True),
     0x13: (DataEnd, False),
+    0xFF: (Ack, False)
 }
 
 #  Message structure AFTER common components (HEAD, CL, MID)
@@ -23,6 +25,7 @@ MESSAGE_STRUCTURE = {
     ActionExtended: (['ar', 'an', 'ac1', 'ac2'], [4, 4, 4, 4]),
     Data: (['pmsg', 'siz', 'dat'], [4, 1, -1]),
     DataEnd: (['pmsg', 'siz', 'dat'], [4, 1, -1]),
+    Ack: (['pmsg'], [4])
 }
 
 

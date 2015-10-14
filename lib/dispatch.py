@@ -5,7 +5,7 @@ from threading import local, Thread
 from queue import Queue, Empty
 from .decoding import decode as message_decode
 from .messages import *
-from .errors import *
+#  from .errors import *
 
 
 class Dispatch:
@@ -30,6 +30,7 @@ class Dispatch:
         self.outbox = Queue()
         self.awaitbox = _Awaitbox()
         self.lostbox = Queue()
+        self.tick_count = 0
 
     def add_message(self, msg):
         self.outbox.put(msg)
@@ -39,7 +40,11 @@ class Dispatch:
         for m in lost:
             self.lostbox.put(m)
 
-        #  Still need to read from awaitbox
+        self.tick_count += 1
+        awaiting_ms = self.awaitbox.pull_resend(self.tick_count)
+        self.awaitbox.tick()
+        for m in awaiting_ms:
+            self.threader.add_message(m)
 
         while not self.outbox.empty():
             try:
@@ -53,7 +58,7 @@ class Dispatch:
             except Empty:
                 break
 
-    def in_process(self):
+    def inprocess(self):
         """
         * Read all from threader.inq
         * Decode
@@ -121,32 +126,36 @@ class _Awaitbox:
         self.first = dict()
         self.second = dict()
         self.third = dict()
+        self.buckets = [dict, dict, dict]
+        self.intervals = [1, 3, 5]
 
     def tick(self):
         """
         "Ticks" the awaitbox, moving all items in first to second, second to third, etc.
         :return: All items which "ticked out" of third (since they should be moved to the lostbox
         """
+        ret = self.buckets[2].values()
+        self.buckets[2].clear()
+        self.buckets[2] = self.buckets[1].copy()
+        self.buckets[1].clear()
+        self.buckets[1] = self.buckets[0].copy()
+        self.buckets[0].clear()
 
-        ret = self.third.values()
-        self.third.clear()
-        self.third = self.second.copy()
-        self.second.clear()
-        self.second = self.first.copy()
-        self.first.clear()
+
         return ret
 
     def add(self, msg):
         self.first[msg.mid] = msg
 
-    def acknowledge(self, id):
-        if id in self.first:
-            del self.first[id]
-        elif id in self.second:
-            del self.second[id]
-        elif id in self.third:
-            del self.third[id]
-        else:
-            print("Acknowledged message " + str(id) + "but don't have it in awaitbox")
-        pass
+    def acknowledge(self, mid):
+        for bucket in self.buckets:
+            if mid in bucket:
+                del bucket[mid]
 
+    def pull_resend(self, tick_count):
+        ret = []
+        for index, interval in enumerate(self.intervals):
+            if not tick_count % interval:
+                ret.extend(self.buckets[index].values())
+
+        return ret

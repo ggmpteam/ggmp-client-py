@@ -90,6 +90,12 @@ class DataEnd:
         self.stream.extend(dat)
 
 
-
 class Ack:
-    pass
+    def __init__(self, cl, mid, pmsg):
+        self.cl = cl
+        self.mid = mid
+        self.pmsg = pmsg
+        self.stream = bytearray([0xFF])
+        self.stream.extend((cl & 0xFFFFFF).to_bytes(3, "big", signed=False))
+        self.stream.extend((mid & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
+        self.stream.extend((pmsg & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
