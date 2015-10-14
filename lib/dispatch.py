@@ -36,7 +36,6 @@ class Dispatch:
         self._outbox.put(msg)
 
     def send_all(self):
-
         self._tick_count += 1
         awaiting_ms = self._awaitbox.pull_resend(self._tick_count)
         for m in awaiting_ms:

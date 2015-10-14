@@ -2,9 +2,8 @@ __author__ = 'bretmattingly'
 
 from lib.client import GGMPClient, Message
 from lib.errors import *
-from queue import Empty
 
-ggwp = GGMPClient(1, ('127.0.0.1', 8080))
+ggwp = GGMPClient(1, ('127.0.0.1', 12358))
 
 # This will work
 ggwp.build_message(Message.Action, True, ar=1, an=3)
@@ -16,6 +15,7 @@ except MissingComponentsError as e:
     print(e)
 
 ggwp.build_message(Message.Action, True, ar=2, an=14, ac1=244)
+ggwp.send_all()
 
 while True:
     try:

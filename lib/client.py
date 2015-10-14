@@ -28,8 +28,12 @@ class GGMPClient:
 
         # Todo: Sanity checks
 
-    def send(self):
-        pass
+    def send_all(self):
+        """
+        Send all messages queued
+        :return:
+        """
+        self._dispatch.send_all()
 
     def try_read(self):
         """Non-blocking read.
@@ -40,7 +44,7 @@ class GGMPClient:
         try:
             m = self._dispatch.try_read()
         except errors.NoMessagesError:
-            m = None
+            return None
         print("Received message: " + str(m))
         return m
 
