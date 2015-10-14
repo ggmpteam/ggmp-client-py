@@ -5,7 +5,7 @@ from threading import local, Thread
 from queue import Queue, Empty
 from .decoding import decode as message_decode
 from .messages import *
-#  from .errors import *
+from .errors import *
 
 
 class Dispatch:
@@ -25,36 +25,36 @@ class Dispatch:
                                        inbox -> read()
     """
     def __init__(self, c_id, ip_addr):
-        self.threader = _Threader(c_id, ip_addr)
-        self.inbox = Queue()
-        self.outbox = Queue()
-        self.awaitbox = _Awaitbox()
-        self.lostbox = Queue()
-        self.tick_count = 0
+        self._threader = _Threader(c_id, ip_addr)
+        self._inbox = Queue()
+        self._outbox = Queue()
+        self._awaitbox = _Awaitbox()
+        self._lostbox = Queue()
+        self._tick_count = 0
 
     def add_message(self, msg):
-        self.outbox.put(msg)
+        self._outbox.put(msg)
 
     def send_all(self):
 
-        self.tick_count += 1
-        awaiting_ms = self.awaitbox.pull_resend(self.tick_count)
+        self._tick_count += 1
+        awaiting_ms = self._awaitbox.pull_resend(self._tick_count)
         for m in awaiting_ms:
-            self.threader.add_message(m)
+            self._threader.add_message(m)
 
-        lost = self.awaitbox.shift()
+        lost = self._awaitbox.shift()
         for m in lost:
-            self.lostbox.put(m)
+            self._lostbox.put(m)
 
-        while not self.outbox.empty():
+        while not self._outbox.empty():
             try:
-                m = self.outbox.get()
+                m = self._outbox.get()
                 if m.ack:
-                    self.awaitbox.add(m)
+                    self._awaitbox.add(m)
                 #  "Burst fire"
-                self.threader.add_message(m)
-                self.threader.add_message(m)
-                self.threader.add_message(m)
+                self._threader.add_message(m)
+                self._threader.add_message(m)
+                self._threader.add_message(m)
             except Empty:
                 break
 
@@ -65,13 +65,20 @@ class Dispatch:
         * If any Acks, process awaitbox
         * Move all non-Acks to inbox
         """
-        ms = self.threader.read_all()
+        ms = self._threader.read_all()
         for m in ms:
             if type(m) == Ack:
-                self.awaitbox.acknowledge(m.mid)
+                self._awaitbox.acknowledge(m.mid)
                 continue
             else:
-                self.inbox.put(m)
+                self._inbox.put(m)
+
+    def try_read(self):
+        try:
+            self._inbox.get(block=False)
+        except Empty:
+            raise NoMessagesError
+
 
 
 class _Threader:
@@ -93,7 +100,7 @@ class _Threader:
         self.outthread.start()
 
     def add_message(self, msg):
-        self.inq.put(msg)
+        self.outq.put(msg)
 
     def read_all(self):
         ret = []

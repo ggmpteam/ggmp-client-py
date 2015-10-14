@@ -1,11 +1,8 @@
 __author__ = 'bretmattingly'
 from . import messages
 from . import errors
-from .decoding import decode as message_decode
-import socket
 from enum import Enum
-from queue import Queue, Empty
-from threading import local, Thread
+from .dispatch import Dispatch
 
 
 class GGMPClient:
@@ -27,17 +24,7 @@ class GGMPClient:
         self.client_id = c_id
         self.use_message_ids = use_message_ids
         self.message_id = 0x000000
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Output socket
-        self.sock.bind(ip_addr)
-        self.inq = Queue()  # Input queue
-        self.outq = Queue()  # Output queue
-        self.server_addr = ip_addr
-
-        self.outthread = Thread(target=_sendmsg, daemon=True, args=(self.outq, self.sock, self.server_addr))
-        self.inthread = Thread(target=_listen, daemon=True, args=(self.inq, self.sock))
-
-        self.outthread.start()
-        self.inthread.start()
+        self._dispatch = Dispatch(c_id, ip_addr)
 
         # Todo: Sanity checks
 
@@ -51,21 +38,11 @@ class GGMPClient:
         :return:
         """
         try:
-            m = self.inq.get(block=False)
-        except Empty:
-            raise errors.NoMessagesError
-
+            m = self._dispatch.try_read()
+        except errors.NoMessagesError:
+            m = None
         print("Received message: " + str(m))
-
-    def read(self):
-        """Blocking read
-
-        This will block the main client thread (not necessarily the inbox thread).
-        :return:
-        """
-
-        m = self.inq.get(block=True)
-        print("Received message: " + str(m))
+        return m
 
     def build_message(self, mtype, ack=False, **kwargs):
         """Builds and enqueues a GGMP message
@@ -106,34 +83,13 @@ class GGMPClient:
             raise errors.UnknownTypeError(type)
 
         self.message_id += 1
-        self.outq.put(m, block=False)
+        self._dispatch.add_message(m)
 
 
 class Message(Enum):
-    Action          = 1
-    ActionShort     = 2
-    ActionExtended  = 3
-    Data            = 4
-    DataEnd         = 5
-    Ack             = 6
-
-
-def _listen(inq, sin):
-    while True:
-        localdata = local()
-        localdata.m = sin.recvfrom(512)
-        print("Received " + str(localdata.m[0]) + " from " + str(localdata.m[1]))
-        inq.put(localdata.m[0], block=False)
-        print(message_decode(localdata.m[0]))
-
-
-def _sendmsg(outq, sock, ip_addr):
-    while True:
-        localdata = local()
-        localdata.m = outq.get(block=True)
-        sock.sendto(localdata.m.stream, (ip_addr[0], ip_addr[1]))
-
-
-
-
-
+    Action = 1
+    ActionShort = 2
+    ActionExtended = 3
+    Data = 4
+    DataEnd = 5
+    Ack = 6
