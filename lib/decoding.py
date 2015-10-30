@@ -47,25 +47,31 @@ def determine_message_type(stream):
 
 
 def parse_message(mtype, stream):
-    structure = MESSAGE_STRUCTURE[mtype]
-    if not len(stream) == 4 + sum(structure[1]):
+    structure = MESSAGE_STRUCTURE[mtype[0]]
+    if not len(stream) == 8 + sum(structure[1]):
         raise MalformedMessageError(stream, 4 + sum(structure[1]))
     else:
         message = dict()
-        message['head'] = stream.pop(0)
-        message['cl'] = bytes.join(stream[0:3])
-        del stream[0:3]
-        message['mid'] = bytes.join(stream[0:4])
-        del stream[0:4]
+        mutstream = bytearray(stream)
+        message['head'] = int(mutstream[0])
+        print(message['head'])
+        del mutstream[0]
+        message['cl'] = int.from_bytes(mutstream[0:3], byteorder='big', signed=False)
+        del mutstream[0:3]
+        message['mid'] = int.from_bytes(mutstream[0:4], byteorder='big', signed=False)
+        del mutstream[0:4]
         for i, component in enumerate(structure[0]):
-            if not structure[1][i] == -1:
+            if structure[1][i] == -1:
                 if 'siz' in message:
-                    message[component] = bytes.join(stream[0:message['siz']])
-                    del stream[0:message['siz']]
+                    message[component] = bytes.join(mutstream[0:message['siz']])
+                    del mutstream[0:message['siz']]
             else:
-                message[component] = bytes.join(stream[0:structure[1][i]])
-                del stream[0:structure[1][i]]
+                message[component] = int.from_bytes(mutstream[0:structure[1][i]], byteorder='big', signed=False)
+                del mutstream[0:structure[1][i]]
             pass
         message['ACK'] = mtype[1]
+        del message['head']
+        print("Resulting mesage dict:")
+        print(message)
 
     return mtype[0](**message)
