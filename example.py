@@ -1,5 +1,6 @@
 __author__ = 'bretmattingly'
 
+from lib.messages import *
 from lib.client import GGMPClient, Message
 from lib.errors import *
 
@@ -21,7 +22,12 @@ ggwp.build_message(Message.DataEnd, True, pmsg=1, dat=bytes("tacos.", "utf-8"), 
 ggwp.send_all()
 while True:
     try:
-        ggwp.try_read()
+        m = ggwp.try_read()
+        print(type(m))
+        if type(m) == DataEnd:
+            decoded = m.dat.to_bytes((m.dat.bit_length() + 7) // 8, 'big') or b'\0'
+            decoded = decoded.decode()
+            print(decoded)
     except NoMessagesError as e:
         print("All out of messages.")
         exit(0)

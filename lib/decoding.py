@@ -56,7 +56,6 @@ def parse_message(mtype, stream):
         message = dict()
         mutstream = bytearray(stream)
         message['head'] = int(mutstream[0])
-        print(message['head'])
         del mutstream[0]
         message['cl'] = int.from_bytes(mutstream[0:3], byteorder='big', signed=False)
         del mutstream[0:3]
@@ -73,7 +72,6 @@ def parse_message(mtype, stream):
             pass
         message['ACK'] = mtype[1]
         del message['head']
-        print("Resulting mesage dict:")
         print(message)
 
     return mtype[0](**message)

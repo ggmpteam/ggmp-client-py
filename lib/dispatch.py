@@ -74,7 +74,7 @@ class Dispatch:
 
     def try_read(self):
         try:
-            self._inbox.get(block=False)
+            return self._inbox.get(block=False)
         except Empty:
             raise NoMessagesError
 
@@ -118,7 +118,6 @@ def listen(inq, sin):
         localdata.m = sin.recvfrom(512)
         print("Received " + str(localdata.m[0]) + " from " + str(localdata.m[1]))
         inq.put(message_decode(localdata.m[0]), block=False)
-        print(message_decode(localdata.m[0]))
 
 
 def sendmsg(outq, sock, ip_addr):
