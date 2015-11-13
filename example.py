@@ -17,6 +17,8 @@ except MissingComponentsError as e:
 ggwp.build_message(Message.Action, True, ar=2, an=14, ac1=244)
 ggwp.send_all()
 
+ggwp.build_message(Message.DataEnd, True, pmsg=1, dat=bytes("tacos.", "utf-8"), siz=len(bytes("tacos.", "utf-8")))
+ggwp.send_all()
 while True:
     try:
         ggwp.try_read()

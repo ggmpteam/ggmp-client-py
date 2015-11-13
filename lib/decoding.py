@@ -48,7 +48,9 @@ def determine_message_type(stream):
 
 def parse_message(mtype, stream):
     structure = MESSAGE_STRUCTURE[mtype[0]]
-    if not len(stream) == 8 + sum(structure[1]):
+
+    # Sanity check
+    if not len(stream) == 8 + sum(structure[1]) and -1 not in structure[1]:
         raise MalformedMessageError(stream, 4 + sum(structure[1]))
     else:
         message = dict()
@@ -58,12 +60,12 @@ def parse_message(mtype, stream):
         del mutstream[0]
         message['cl'] = int.from_bytes(mutstream[0:3], byteorder='big', signed=False)
         del mutstream[0:3]
-        message['mid'] = int.from_bytes(mutstream[0:4], byteorder='big', signed=False)
+        message['mid'] = int.from_bytes(mutstream[0:4],  byteorder='big', signed=False)
         del mutstream[0:4]
         for i, component in enumerate(structure[0]):
             if structure[1][i] == -1:
                 if 'siz' in message:
-                    message[component] = bytes.join(mutstream[0:message['siz']])
+                    message[component] = int.from_bytes(mutstream[0:message['siz']], byteorder='big', signed=False)
                     del mutstream[0:message['siz']]
             else:
                 message[component] = int.from_bytes(mutstream[0:structure[1][i]], byteorder='big', signed=False)

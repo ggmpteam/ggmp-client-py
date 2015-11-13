@@ -45,7 +45,6 @@ class GGMPClient:
             m = self._dispatch.try_read()
         except errors.NoMessagesError:
             return None
-        print("Received message: " + str(m))
         return m
 
     def build_message(self, mtype, ack=False, **kwargs):
@@ -60,12 +59,12 @@ class GGMPClient:
         :return:
         """
         if mtype == Message.Action:
-            if {"ar", "an"} - set(kwargs):
+            if {"ar", "an"} - set(kwargs): # Check for all required components
                 raise errors.MissingComponentsError("Action", ["ar", "an"], kwargs)
             else:
-                ac1 = kwargs["ac1"] if "ac1" in kwargs else 0x00
+                ac1 = kwargs["ac1"] if "ac1" in kwargs else 0x00 # Set optional components to defaults
                 ac2 = kwargs["ac2"] if "ac2" in kwargs else 0x00
-                m = messages.Action(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
+                m = messages.Action(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2) # construct
 
         elif mtype == Message.ActionShort:
             if {"ar", "an"} - set(kwargs):
@@ -82,6 +81,12 @@ class GGMPClient:
                 ac1 = kwargs["ac1"] if "ac1" in kwargs else 0x00
                 ac2 = kwargs["ac2"] if "ac2" in kwargs else 0x00
                 m = messages.ActionExtended(ack, self.client_id, self.message_id, kwargs["ar"], kwargs["an"], ac1, ac2)
+
+        elif mtype == Message.DataEnd:
+            if {"pmsg", "dat", "siz"} - set(kwargs):
+                raise errors.MissingComponentsError("Data", ["pmsg", "dat", "siz"], kwargs)
+            else:
+                m = messages.DataEnd(ack, self.client_id, self.message_id, kwargs["pmsg"], kwargs["siz"], kwargs["dat"])
 
         else:
             raise errors.UnknownTypeError(type)

@@ -70,8 +70,11 @@ class Data:
         self.stream.extend((cl & 0xFFFFFF).to_bytes(3, "big", signed=False))
         self.stream.extend((mid & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
         self.stream.extend((pmsg & 0xFFFFFFFF).to_bytes(4, "big", signed=False))
-        self.stream.extend((siz & 0xFFFFFFFF).to_bytes(1, "big", signed=False))
-        self.stream.extend(dat)
+        self.stream.extend((siz & 0xFF).to_bytes(1, "big", signed=False))
+        if type(dat) == bytes or type(dat) == bytearray:
+            self.stream.extend(dat)
+        else:
+            self.stream.extend(dat.to_bytes(self.siz, "big", signed=False))
 
 
 class DataEnd:

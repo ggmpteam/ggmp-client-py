@@ -34,4 +34,4 @@ class MalformedMessageError(Exception):
         pass
 
     def __str__(self):
-        return repr("Message was malformed. \nBytes:" + str(self.m) + "\nExpected length: " + self.el)
+        return repr("Message was malformed. \nBytes:" + str(self.m) + "\nExpected length: " + str(self.el))
