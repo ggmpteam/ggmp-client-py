@@ -23,7 +23,11 @@ ggwp.send_all()
 while True:
     try:
         m = ggwp.try_read()
-        print(type(m))
+        m = ggwp._dispatch._threader.inq.get(True)
+        if m is not None:
+            print("Uhhh, hello?")
+            print(type(m))
+            print(m)
         if type(m) == DataEnd:
             decoded = m.dat.to_bytes((m.dat.bit_length() + 7) // 8, 'big') or b'\0'
             decoded = decoded.decode()

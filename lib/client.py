@@ -43,9 +43,9 @@ class GGMPClient:
         """
         try:
             m = self._dispatch.try_read()
+            return m
         except errors.NoMessagesError:
             return None
-        return m
 
     def build_message(self, mtype, ack=False, **kwargs):
         """Builds and enqueues a GGMP message

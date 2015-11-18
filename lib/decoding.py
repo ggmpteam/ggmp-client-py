@@ -72,6 +72,6 @@ def parse_message(mtype, stream):
             pass
         message['ACK'] = mtype[1]
         del message['head']
-        print(message)
+        # print(message)
 
     return mtype[0](**message)

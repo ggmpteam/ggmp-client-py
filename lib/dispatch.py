@@ -116,7 +116,7 @@ def listen(inq, sin):
     while True:
         localdata = local()
         localdata.m = sin.recvfrom(512)
-        print("Received " + str(localdata.m[0]) + " from " + str(localdata.m[1]))
+        # print("Received " + str(localdata.m[0]) + " from " + str(localdata.m[1]))
         inq.put(message_decode(localdata.m[0]), block=False)
 
 
